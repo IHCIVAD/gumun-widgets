@@ -239,12 +239,14 @@
     }).join("");
   }
   G.card = function (d) {
-    var s = d.sections, h = ['<p class="hd">' + esc(d.chapter) + '</p><p class="ti">' + esc(d.title) + "</p>"];
+    var s = d.sections, h = ['<p class="hd">' + esc(d.chapter) + '</p><p class="ti">' + esc(d.title) +
+      (d.step ? ' <span class="hd">(' + esc(d.step) + ")</span>" : "") + "</p>"];
     if (s["형태"]) h.push('<div class="bx"><h3>형태</h3>' + lines(s["형태"]) + "</div>");
     if (s["비교 예문"]) h.push('<div class="bx"><h3>예문</h3>' + s["비교 예문"].split("\n").filter(function (l) { return l.trim().indexOf("- ") === 0; })
       .map(function (l) { return example(l.trim().slice(2)); }).join("") + "</div>");
     if (s["해석 패턴"]) h.push('<div class="bx"><h3>해석 패턴</h3><div class="pat">' + inline(s["해석 패턴"]) + "</div></div>");
     if (d.points && d.points.length) h.push('<div class="bx"><h3>함께 익힐 해석 포인트</h3><ul>' + d.points.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>");
+    if (s["9급 포인트"]) h.push('<div class="bx"><h3>9급 포인트</h3>' + lines(s["9급 포인트"]) + "</div>");
     if (s["자주 하는 실수"]) h.push('<div class="bx"><h3>이런 실수 조심</h3>' + lines(s["자주 하는 실수"]) + "</div>");
     root("card", h.join(""));
   };
