@@ -42,7 +42,10 @@
     ".bx p,.bx li{font-size:16px;line-height:1.7;margin:0 0 .25rem}.bx ul{margin:0;padding-left:1.2em}.bx b{font-weight:500;color:var(--text-primary)}" +
     ".ex{padding:10px 14px;border-radius:var(--radius);background:var(--surface-1);margin:0 0 8px}" +
     ".ex .en{font-size:22px;line-height:1.4}.ex .nt{font-size:14px;color:var(--text-secondary);margin-top:4px}.K-card .sl{padding:0 8px}" +
-    ".pat{font-size:17px;padding:12px 16px;border-radius:var(--radius);border:1px solid var(--border-strong);line-height:1.6}";
+    ".pat{font-size:17px;padding:12px 16px;border-radius:var(--radius);border:1px solid var(--border-strong);line-height:1.6}" +
+    /* 교재 해석 보기 (ask, 학생이 답을 보낸 뒤) */
+    ".rv{margin-top:1rem}.rv .ans{margin-top:.75rem;padding:12px 16px;border-radius:var(--radius);background:var(--surface-1)}" +
+    ".rv .ans .k{font-size:17px;line-height:1.6}.rv .ans .m{font-family:var(--font-voice);font-size:17px;color:var(--text-secondary);margin-top:6px}";
   var COLORS = { S: "#378ADD", V: "#E24B4A", O: "#1D9E75", IO: "#1D9E75", DO: "#1D9E75", C: "#7F77DD", OC: "#7F77DD", M: "#888780", A: "#BA7517", CONJ: "#D85A30" };
   var CONF = ["확신", "헷갈림", "모르겠어요"], NUMS = "①②③④⑤";
 
@@ -75,7 +78,8 @@
     root("ask", (d.q ? '<p class="q">' + esc(d.q) + "</p>" : "") + (d.head ? '<p class="hd">' + esc(d.head) + "</p>" : "") + '<div class="s" id="s"></div>' + gl(d.gloss) + gl(d.note) +
       '<div class="tl"' + (tools === "pv" ? "" : ' style="display:none"') + '><button id="mv">동사 표시</button><button id="mp">( ) 묶기</button><button id="mx">표시 지우기</button></div>' +
       '<p class="tip" id="tip"></p>' + (d.mark ? '<div class="tl"><button id="mx2">다시</button></div>' : '<textarea id="t" placeholder="덩어리 순서대로 해석해 보세요"></textarea>') +
-      '<div class="ft">' + (d.conf === false ? "" : confBtns()) + '<span class="gr"></span><button id="go">보내기 ↗</button></div><div class="er" id="er"></div>');
+      '<div class="ft">' + (d.conf === false ? "" : confBtns()) + '<span class="gr"></span><button id="go">보내기 ↗</button></div><div class="er" id="er"></div>' +
+      '<div class="rv" id="rv"></div>');
     var S = $("s");
     var rf = function (L, i) { return L.findIndex(function (r) { return i >= r[0] && i <= r[1]; }); };
     function D() {
@@ -125,6 +129,13 @@
       }).join(" ") : "없음";
       if (d.mark) return sendPrompt("(" + (d.id || "표시") + ") " + mk + tail(st));
       sendPrompt("(해석 " + d.id + ") 표시: " + mk + " | 해석: " + (t || "(비움)") + tail(st));
+      /* 교재 정답은 선생님 기억에 맡기지 않고 위젯이 보여 준다. 틀렸으면 고쳐 본 뒤 학생이 직접 연다. */
+      if (d.answer && !$("rv").innerHTML) {
+        $("rv").innerHTML = '<button id="rvb">📖 교재 해석 보기</button>';
+        on("rvb", function () {
+          $("rv").innerHTML = '<div class="ans"><div class="k">📖 ' + esc(d.answer.ko) + '</div><div class="m">' + esc(d.answer.marked) + "</div></div>";
+        });
+      }
     });
     D();
   };
