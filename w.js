@@ -75,7 +75,7 @@
     root("ask", (d.q ? '<p class="q">' + esc(d.q) + "</p>" : "") + (d.head ? '<p class="hd">' + esc(d.head) + "</p>" : "") + '<div class="s" id="s"></div>' + gl(d.gloss) + gl(d.note) +
       '<div class="tl"' + (tools === "pv" ? "" : ' style="display:none"') + '><button id="mv">동사 표시</button><button id="mp">( ) 묶기</button><button id="mx">표시 지우기</button></div>' +
       '<p class="tip" id="tip"></p>' + (d.mark ? '<div class="tl"><button id="mx2">다시</button></div>' : '<textarea id="t" placeholder="덩어리 순서대로 해석해 보세요"></textarea>') +
-      '<div class="ft">' + confBtns() + '<span class="gr"></span><button id="go">보내기 ↗</button></div><div class="er" id="er"></div>');
+      '<div class="ft">' + (d.conf === false ? "" : confBtns()) + '<span class="gr"></span><button id="go">보내기 ↗</button></div><div class="er" id="er"></div>');
     var S = $("s");
     var rf = function (L, i) { return L.findIndex(function (r) { return i >= r[0] && i <= r[1]; }); };
     function D() {
@@ -94,7 +94,7 @@
       $("tip").textContent = m === "v"
         ? (pd === null ? "동사의 첫 단어를 누르고 끝 단어를 누르세요 (have lived처럼). 한 단어 동사는 같은 단어를 두 번 눌러요. 밑줄을 누르면 지워져요." + (d.mark ? "" : " 표시는 안 해도 돼요.") : "이제 동사의 끝 단어를 누르세요. 한 단어면 같은 단어를 한 번 더 눌러요.")
         : (pd === null ? "묶을 덩어리의 첫 단어를 누르세요. 괄호 안을 누르면 풀려요." : "이제 끝 단어를 누르세요.");
-      paintConf(st);
+      if (d.conf !== false) paintConf(st);
     }
     function T(i) {
       err("");
@@ -109,13 +109,14 @@
     on("mv", function () { m = "v"; pd = null; D(); });
     on("mp", function () { m = "p"; pd = null; D(); });
     on("mx", function () { VR = []; B = []; pd = null; D(); });
-    confWire(st);
+    if (d.conf !== false) confWire(st);
     if (d.mark) on("mx2", function () { VR = []; B = []; pd = null; err(""); D(); });
     else $("t").addEventListener("input", function () { err(""); });
     on("go", function () {
       var t = d.mark ? "" : $("t").value.trim();
-      if (d.mark && !VR.length && !B.length && st.cf !== "모르겠어요") return err("표시를 하거나 ‘모르겠어요’를 골라 주세요");
-      if (!d.mark && !t && st.cf !== "모르겠어요") return err("해석을 쓰거나 ‘모르겠어요’를 골라 주세요");
+      var giveUp = d.conf === false ? " (모르겠으면 대화창에 그렇게 써 주세요)" : "";
+      if (d.mark && !VR.length && !B.length && st.cf !== "모르겠어요") return err(giveUp ? "표시를 해 주세요" + giveUp : "표시를 하거나 ‘모르겠어요’를 골라 주세요");
+      if (!d.mark && !t && st.cf !== "모르겠어요") return err(giveUp ? "해석을 써 주세요" + giveUp : "해석을 쓰거나 ‘모르겠어요’를 골라 주세요");
       var mk = VR.length || B.length ? W.map(function (w, i) {
         var k = rf(B, i), v = rf(VR, i), o = sp(w)[0];
         if (v >= 0 && VR[v][0] === i) o = "[" + o; if (v >= 0 && VR[v][1] === i) o += "]";
