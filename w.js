@@ -68,12 +68,13 @@
 
   var G = {};
 
-  /* 해석 문제: 동사 밑줄(첫·끝 단어로 범위), ( ) 묶기, 해석 입력, 자신감 */
+  /* 해석 문제: 동사 밑줄(첫·끝 단어로 범위), ( ) 묶기, 해석 입력, 자신감
+     d.mark = true 이면 수업 중 묶기·고르기 질문: 해석 칸 없이 표시만 보낸다. d.tools: "p"(묶기만) | "v"(동사만) | "pv"(둘 다), d.q: 질문 */
   G.ask = function (d) {
-    var W = d.text.split(" "), B = [], VR = [], m = "v", pd = null, st = { cf: "" };
-    root("ask", '<p class="hd">' + esc(d.head) + '</p><div class="s" id="s"></div>' + gl(d.gloss) + gl(d.note) +
-      '<div class="tl"><button id="mv">동사 표시</button><button id="mp">( ) 묶기</button><button id="mx">표시 지우기</button></div>' +
-      '<p class="tip" id="tip"></p><textarea id="t" placeholder="덩어리 순서대로 해석해 보세요"></textarea>' +
+    var tools = d.tools || "pv", W = d.text.split(" "), B = [], VR = [], m = tools === "p" ? "p" : "v", pd = null, st = { cf: "" };
+    root("ask", (d.q ? '<p class="q">' + esc(d.q) + "</p>" : "") + (d.head ? '<p class="hd">' + esc(d.head) + "</p>" : "") + '<div class="s" id="s"></div>' + gl(d.gloss) + gl(d.note) +
+      '<div class="tl"' + (tools === "pv" ? "" : ' style="display:none"') + '><button id="mv">동사 표시</button><button id="mp">( ) 묶기</button><button id="mx">표시 지우기</button></div>' +
+      '<p class="tip" id="tip"></p>' + (d.mark ? '<div class="tl"><button id="mx2">다시</button></div>' : '<textarea id="t" placeholder="덩어리 순서대로 해석해 보세요"></textarea>') +
       '<div class="ft">' + confBtns() + '<span class="gr"></span><button id="go">보내기 ↗</button></div><div class="er" id="er"></div>');
     var S = $("s");
     var rf = function (L, i) { return L.findIndex(function (r) { return i >= r[0] && i <= r[1]; }); };
@@ -91,11 +92,12 @@
       });
       $("mv").className = m === "v" ? "on" : ""; $("mp").className = m === "p" ? "on" : "";
       $("tip").textContent = m === "v"
-        ? (pd === null ? "동사의 첫 단어를 누르고 끝 단어를 누르세요 (have lived처럼). 한 단어 동사는 같은 단어를 두 번 눌러요. 밑줄을 누르면 지워져요. 표시는 안 해도 돼요." : "이제 동사의 끝 단어를 누르세요. 한 단어면 같은 단어를 한 번 더 눌러요.")
+        ? (pd === null ? "동사의 첫 단어를 누르고 끝 단어를 누르세요 (have lived처럼). 한 단어 동사는 같은 단어를 두 번 눌러요. 밑줄을 누르면 지워져요." + (d.mark ? "" : " 표시는 안 해도 돼요.") : "이제 동사의 끝 단어를 누르세요. 한 단어면 같은 단어를 한 번 더 눌러요.")
         : (pd === null ? "묶을 덩어리의 첫 단어를 누르세요. 괄호 안을 누르면 풀려요." : "이제 끝 단어를 누르세요.");
       paintConf(st);
     }
     function T(i) {
+      err("");
       var L = m === "v" ? VR : B;
       if (pd === null) { var k = rf(L, i); if (k >= 0) L.splice(k, 1); else pd = i; }
       else {
@@ -108,16 +110,19 @@
     on("mp", function () { m = "p"; pd = null; D(); });
     on("mx", function () { VR = []; B = []; pd = null; D(); });
     confWire(st);
-    $("t").addEventListener("input", function () { err(""); });
+    if (d.mark) on("mx2", function () { VR = []; B = []; pd = null; err(""); D(); });
+    else $("t").addEventListener("input", function () { err(""); });
     on("go", function () {
-      var t = $("t").value.trim();
-      if (!t && st.cf !== "모르겠어요") return err("해석을 쓰거나 ‘모르겠어요’를 골라 주세요");
+      var t = d.mark ? "" : $("t").value.trim();
+      if (d.mark && !VR.length && !B.length && st.cf !== "모르겠어요") return err("표시를 하거나 ‘모르겠어요’를 골라 주세요");
+      if (!d.mark && !t && st.cf !== "모르겠어요") return err("해석을 쓰거나 ‘모르겠어요’를 골라 주세요");
       var mk = VR.length || B.length ? W.map(function (w, i) {
         var k = rf(B, i), v = rf(VR, i), o = sp(w)[0];
         if (v >= 0 && VR[v][0] === i) o = "[" + o; if (v >= 0 && VR[v][1] === i) o += "]";
         if (k >= 0 && B[k][0] === i) o = "(" + o; if (k >= 0 && B[k][1] === i) o += ")";
         return o + sp(w)[1];
       }).join(" ") : "없음";
+      if (d.mark) return sendPrompt("(" + (d.id || "표시") + ") " + mk + tail(st));
       sendPrompt("(해석 " + d.id + ") 표시: " + mk + " | 해석: " + (t || "(비움)") + tail(st));
     });
     D();
